@@ -3,20 +3,16 @@ import Flight from "../models/Flight.js";
 
 const router = express.Router();
 
-// Search flights
+// 🔹 Search flights
 router.get("/search", async (req, res) => {
   try {
     const { departure, arrival, date, nonstop } = req.query;
 
-    let query = {
-      departure,
-      arrival,
-    };
+    let query = { departure, arrival };
 
     if (nonstop) query.nonstop = nonstop === "true";
 
     if (date) {
-      // Match whole day instead of exact timestamp
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
 
@@ -33,18 +29,38 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-export default router;
 
-// Get single flight by ID
+// 🔹 Get all flights (for admin dashboard)
+router.get("/", async (req, res) => {
+  try {
+    const flights = await Flight.find();
+    res.json(flights);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// 🔹 Get single flight
 router.get("/:id", async (req, res) => {
   try {
     const flight = await Flight.findById(req.params.id);
-    if (!flight) {
-      return res.status(404).json({ message: "Flight not found" });
-    }
+    if (!flight) return res.status(404).json({ message: "Flight not found" });
     res.json(flight);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
+// PUT update flight status
+router.put("/:id", async (req, res) => {
+  try {
+    const flight = await Flight.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+    if (!flight) return res.status(404).json({ message: "Flight not found" });
+    res.json(flight);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+export default router;
